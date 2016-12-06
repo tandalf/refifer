@@ -1,5 +1,4 @@
 Introduction
 ============
 
-Refifer is a python client library used for registering and managing events 
-on the fetchr's ffire event distribution system.
+Refifer is a Python Client Library used for registering, managing and sending out events to the appropriate endpoints. 
