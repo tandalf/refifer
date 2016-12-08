@@ -30,7 +30,48 @@ class Event(object):
         except Exception as e:
             raise ValidationError(e)
 
+class EventRegistration(object):
+    """
+    Class that represents the data used for registering events notification
+    on the service.
+    """
 
+    def __init__(self, client_id, webhook_url="", phone="", email="", 
+        event_codes=[]):
+
+        self.client_id = client_id
+        self.webhook_url = webhook_url
+        self.phone = phone
+        self.email = email
+        self.status_codes = status_codes
+        self._event_codes = event_codes
+
+    def add_event_by_code(self, event_code):
+        """
+        Adds an event code the lis t events that are to be registered.
+        """
+
+        #perform some checks if neccesary in cases where conflicts may 
+        #arise
+        self._event_codes.append(event_code)
+
+    def get_event_registration_data(self):
+
+        payload = {
+                    "clientWebhookUrl":self.webhook_url, "email": self.email,
+        }
+
+        for code in self._event_codes:
+            if code == "order_uploaded":
+                payload.setdefault("SU1", "order_uploaded")
+            elif code == "order_picked":
+                payload.setdefault("SU2", "order_picked")
+            elif code == "order_scheduled":
+                payload.setdefault("SU3", "order_scheduled")
+            elif code == "order_recieved":
+                payload.setdefault("SU4", "order_recieved")
+
+        return payload
 
 def picked_validator(event):
     """
