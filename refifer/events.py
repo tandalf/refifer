@@ -9,7 +9,7 @@ class Event(object):
     """
     Represents an event that will be sent to the notification service.
     This class uses validators to validate the payload of its instances.
-    Validators are callables which take the payload of an an event as
+    Validators are callables which takes an event as
     input and raises an exception if the payload could not
     be validated by the callable.
     """
@@ -26,6 +26,19 @@ class Event(object):
     def validate(self):
         try:
             for validator in self._validators:
-                validator(self.payload)
+                validator(self)
         except Exception as e:
             raise ValidationError(e)
+
+
+
+def picked_validator(event):
+    """
+    validator used for validating the fields of a `picked` event
+    """
+    payload = event.payload
+    if payload["status_code"] != "PCK":
+        raise ValidationError("Status code for payload should be PCK.")
+
+    if payload["status_name"] != "Picked":
+        raise ValidationError("Status name is incorrect")

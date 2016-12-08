@@ -38,7 +38,7 @@ class Refifer(object):
         """
         raise NotImplemetedError("method not yet implemented")
 
-    def publish_event(self, event_name, payload):
+    def fire_event(self, event, payload):
         """
         Publishes an event to the server providing the payload that should
         be broadcasted to the registed endpoints for the event.
