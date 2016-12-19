@@ -24,7 +24,7 @@ class Refifer(object):
         self.session = requests.Session()
 
     def _prepare_headers(self):
-        return {"access_token": self.access_token}
+        return {"Authorization": self.access_token}
 
     def _make_registration(self, event_name, event_codes):
         """
@@ -32,6 +32,9 @@ class Refifer(object):
         codes
         """
         pass
+
+    def _build_endpoint(self, resource_url=""):
+        raise NotImplemetedError("method not implemented")
 
     def request(self, endpoint, args=None, post_args=None, method=None):
         """
@@ -42,12 +45,25 @@ class Refifer(object):
             method = "POST"
 
         try:
+            headers = self._prepare_headers()
             response = self.session.request(method, endpoint, params=args, 
-                data=post_args, timeout=self.timeout, proxies=self.proxies)
+                data=post_args, timeout=self.timeout, proxies=self.proxies,
+                headers=headers)
 
         except requests.HttpError as e:
             response = json.loads(e.read())
             raise RefiferError(response)
+
+    def get_client_registration_data(self, registration_id):
+        """
+        Gets the events notification registration details from the server.
+        Raises ClientNotRegisterError if the client has not reigstered 
+        notifications on the server
+        """
+        endpoint = self._build_endpoint("fetchrnotifications/notificationlist")
+        #todo: build args for get request
+        args = {"id": registration_id}
+        reg_response = self.request(endpoint, args, method="GET")
 
 
     def register_event(self, event_registration):
@@ -55,7 +71,11 @@ class Refifer(object):
         Registers an event with the server and provides a list of endpoints
         that are to broadcasted to when the event is fired.
         """
-        raise NotImplemetedError("method not yet implemented")
+        data = event_registration.get_event_registration_data()
+
+        #if client already has registered events notification with the
+        #service, update the registration details
+
 
     def fire_event(self, event):
         """

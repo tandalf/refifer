@@ -29,3 +29,10 @@ class ValidationError(RefiferError):
 	validation
 	"""
 	pass
+
+class ClientNotRegisteredError(RefiferError):
+	"""
+	Exception to be raise when the client has not registered for
+	notifications on the server
+	"""
+	pass

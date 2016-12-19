@@ -1,3 +1,3 @@
-BASE_API_ENDPOINT = 'http://notifications.fetchr.us'
+BASE_API_ENDPOINT = 'http://api.fetchr.us/events'
 
 RETRY_COUNT = 10
