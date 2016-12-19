@@ -1,5 +1,7 @@
 """
-Module used for connecting with the ffire server
+Module used for connecting with the fetchr's notification service.
+This module uses the request library extensively and the responses are
+usually requests.Response objects
 """
 import json
 import uuid
@@ -7,16 +9,27 @@ import uuid
 import requests 
 from requests.exceptions import HTTPError
 
-from .constants import RETRY_COUNT, BASE_API_ENDPOINT
+from .constants import RETRY_COUNT, BASE_API_ENDPOINT, FIRE_ENDPOINT
 from .exceptions import RefiferError
 
 class Refifer(object):
     """
-    Class used for making api calls to the ffire server for registering
-    and pushing events.
+    Class used for making api calls to fetchr's notification service and
+    also for registering and pushing events.
+
+    Args:
+        client_id(str): the client_id that uniquely identifies the client
+            making the request.
+
+    Kwargs:
+        retry_count(int): the number of times a request will be retried on
+            error.
+        timeout(int): the number of seconds the request should wait before
+            timing-out the request.
+        proxies(dict): proxy configurations as used by the request lib
     """
 
-    def __init__(self, client_id=None, retry_count=RETRY_COUNT, 
+    def __init__(self, client_id, retry_count=RETRY_COUNT, 
         timeout=None, proxies=None):
 
         self.client_id = client_id
@@ -37,7 +50,13 @@ class Refifer(object):
         pass
 
     def _build_endpoint(self, resource_url=""):
-        raise NotImplemetedError("method not implemented")
+        if resource_url[0] != "/":
+            resource_url = "/" + resource_url
+        return BASE_API_ENDPOINT + resource_url
+
+    def __call__(self, event_name, payload={}, transaction_ref=None):
+        return self.fire(event_name, payload=payload, 
+            transaction_ref=transaction_ref)
 
     def request(self, endpoint, args=None, post_args=None, method=None):
         """
@@ -53,7 +72,10 @@ class Refifer(object):
             post_args(dict): data to be submitted to the server as form data
 
             method(str): http method that will be used for the request
-
+        
+        Returns:
+            response(requests.Response): a Response object that was the 
+                result of the call to the server.
         """
         if post_args:
             method = "POST"
@@ -68,22 +90,40 @@ class Refifer(object):
             response = json.loads(e.read())
             raise RefiferError(response)
 
-    def get_client_registration_data(self, registration_id):
+    def client_registration_data(self, event_name):
         """
-        Gets the events notification registration details from the server.
-        Raises ClientNotRegisterError if the client has not reigstered 
-        notifications on the server
+        Gets the events notification registration details for the client
+        who owns the client_id used in instantiating this class.
+
+        Args:
+            event_name(str): the name of the event whose registration 
+                details is to be gotten from the server.
+
+        Returns:
+            registration_data(dict): the registration data that was used
+                in registering the event with the given name for the client.
         """
-        endpoint = self._build_endpoint("fetchrnotifications/notificationlist")
-        #todo: build args for get request
-        args = {"id": registration_id}
-        reg_response = self.request(endpoint, args, method="GET")
+        endpoint = self._build_endpoint("notifications/" + str(self.client_id))
+        reg_response = self.request(endpoint, method="GET").content
+        reg_response = json.loads(reg_response)
+
+        for data in reg_response["data"]:
+            if data["event_name"] == event_name:
+                return data
 
 
     def register_event(self, event_registration):
         """
         Registers an event with the server and provides a list of endpoints
         that are to broadcasted to when the event is fired.
+
+        Args:
+            event_regisration(EventRegistration): the object that encapsulates
+                the registration of an event.
+
+        Returns:
+            response(requests.Response); the Response object which is the 
+                result of registering an event.
         """
         data = event_registration.event_registration_data()
 
@@ -98,20 +138,44 @@ class Refifer(object):
         """
         Publishes an event to the server providing the payload that should
         be broadcasted to the registed endpoints for the event.
+
+        Args:
+            event(Event): the event that should be fired
+
+        kwargs:
+            transaction_ref(str): transaction reference key
+
+        Returns:
+            response(requests.Response): response gotten from firing event
         """
         data = event.get_data()
         data_ref = data.get("transaction_reference", None)
         ref = data_ref if data_ref else transaction_ref
         if not ref:
-            ref = uuid.uuid4()
+            ref = str(uuid.uuid4())
 
         data["transaction_reference"] = ref
 
+        data = json.dumps(data)
+
         try:
-            response = self.request(BASE_API_ENDPOINT, post_args=data, 
+            return self.request(FIRE_ENDPOINT, post_args=data, 
                 method="POST")
         except HTTPError as e:
             raise RefiferError(e)
 
+
+    def fire(self, event_name, payload={}, transaction_ref=None):
+        """
+        Publishes an event but builds an event object for you.
+        """
+        ref = transaction_ref if transaction_ref else str(uuid.uuid4())
+        event = Event(event_name, payload=payload, transaction_ref=ref)
+
+        return self.fire_event(event)
+
     def unsubscribe_client(self):
+        """
+        Unsubscribes the client from events notifications.
+        """
         return self.request(BASE_API_ENDPOINT + "/notifications", method="DELETE")
