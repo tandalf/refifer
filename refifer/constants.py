@@ -1,3 +1,3 @@
-BASE_API_ENDPOINT = 'http://api.fetchr.us/events'
+BASE_API_ENDPOINT = 'http://192.168.0.119:8080'
 
 RETRY_COUNT = 10

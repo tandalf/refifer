@@ -36,3 +36,9 @@ class ClientNotRegisteredError(RefiferError):
 	notifications on the server
 	"""
 	pass
+
+class ValueError(RefiferError):
+    """
+    Raised in place of the default ValueError.
+    """
+    pass

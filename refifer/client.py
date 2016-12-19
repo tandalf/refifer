@@ -2,8 +2,10 @@
 Module used for connecting with the ffire server
 """
 import json
+import uuid
 
 import requests 
+from requests.exceptions import HTTPError
 
 from .constants import RETRY_COUNT, BASE_API_ENDPOINT
 from .exceptions import RefiferError
@@ -14,17 +16,18 @@ class Refifer(object):
     and pushing events.
     """
 
-    def __init__(self, access_token=None, retry_count=RETRY_COUNT, 
+    def __init__(self, client_id=None, retry_count=RETRY_COUNT, 
         timeout=None, proxies=None):
 
-        self.access_token = access_token
+        self.client_id = client_id
         self.timeout = timeout
         self.proxies = proxies
         self.retry_count = retry_count
         self.session = requests.Session()
 
-    def _prepare_headers(self):
-        return {"Authorization": self.access_token}
+    def _prepare_headers(self, content_type="application/json"):
+        return {"Content-Type": content_type, 
+            "X-Client-ID": self.client_id}
 
     def _make_registration(self, event_name, event_codes):
         """
@@ -40,17 +43,28 @@ class Refifer(object):
         """
         Makes a request to the notifications api and returns the response.
         if post_args are available, it makes a post request to the server.
+
+        Args:
+            endpoint(str): the url endpoint to make the request on
+
+        Kwargs:
+            args(dict): url parameters structured as a dict
+
+            post_args(dict): data to be submitted to the server as form data
+
+            method(str): http method that will be used for the request
+
         """
         if post_args:
             method = "POST"
 
         try:
             headers = self._prepare_headers()
-            response = self.session.request(method, endpoint, params=args, 
+            return self.session.request(method, endpoint, params=args, 
                 data=post_args, timeout=self.timeout, proxies=self.proxies,
                 headers=headers)
 
-        except requests.HttpError as e:
+        except HTTPError as e:
             response = json.loads(e.read())
             raise RefiferError(response)
 
@@ -71,15 +85,33 @@ class Refifer(object):
         Registers an event with the server and provides a list of endpoints
         that are to broadcasted to when the event is fired.
         """
-        data = event_registration.get_event_registration_data()
+        data = event_registration.event_registration_data()
 
-        #if client already has registered events notification with the
-        #service, update the registration details
+        try:
+            return self.request(BASE_API_ENDPOINT + "/notifications",
+                post_args=json.dumps(data), method="POST")
+        except HTTPError as e:
+            raise RefiferError(e)
 
 
-    def fire_event(self, event):
+    def fire_event(self, event, transaction_ref=None):
         """
         Publishes an event to the server providing the payload that should
         be broadcasted to the registed endpoints for the event.
         """
-        raise NotImplemetedError("method not yet implemented")
+        data = event.get_data()
+        data_ref = data.get("transaction_reference", None)
+        ref = data_ref if data_ref else transaction_ref
+        if not ref:
+            ref = uuid.uuid4()
+
+        data["transaction_reference"] = ref
+
+        try:
+            response = self.request(BASE_API_ENDPOINT, post_args=data, 
+                method="POST")
+        except HTTPError as e:
+            raise RefiferError(e)
+
+    def unsubscribe_client(self):
+        return self.request(BASE_API_ENDPOINT + "/notifications", method="DELETE")

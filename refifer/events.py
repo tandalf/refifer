@@ -15,10 +15,10 @@ class Event(object):
     be validated by the callable.
     """
 
-    def __init__(self, name, display_name="", payload={}):
+    def __init__(self, name, transaction_ref=None, payload={}):
         self.name = name
-        self.display_name = display_name
         self.payload = payload
+        self.transaction_ref = transaction_ref
         self._validators = []
 
     def add_payload_validator(self, validator):
@@ -26,6 +26,15 @@ class Event(object):
 
     def clear_validators(self):
         self._validators = []
+
+    def get_data(self):
+        data = {
+            "event_name": self.name,
+            "transaction_reference": str(self.transaction_ref), 
+            "payload": self.payload
+        }
+
+        return data
 
     def validate(self):
         try:
@@ -43,46 +52,37 @@ class EventRegistration(object):
     be build by adding events to the registration object using the 
     exposed methods.
 
-    Args:
-        token(str): the authentication token that will be used to authorize
-            and identify a user.
-
     kwargs:
         registration_payload(dict): an optional keyword arguement that 
         contains the payload that will be posted to the server.
-
-    Todo:
-        We need to elaborate more on the formart for the payload. This 
-        should be done when the payload has been well specified and 
-        documented by the service owners.
     """
 
-    def __init__(self, token, registration_payload={}):
-        self.token = token
-        self._event_endpoints = registration_payload
+    def __init__(self, registration_payload={}):
+        self._registration_payload = registration_payload
 
-    def add_event(self, event_code, url=None, email=None, sms=None):
+    def make_payload(self, event_name, urls=None, emails=None, 
+        sms_numbers=None):
         """
-        Adds an event code to the list of events that are to be registered, 
+        Adds an event to the list of events that are to be registered, 
         including the url, email, or sms number that are to recieve 
-        notifications about the event.
+        notifications about the event for a given client.
 
         Args:
-            event_code(str): the code that uniquely identifies the event.
+            event_name(str): the code that uniquely identifies the event.
 
         Kwargs:
-            url(str): (optional) the url for the endpoint that will recieve 
-                the event.
-            email(str): (optional) the email that will be sent a notification
-                when the event is fired.
-            sms(str): (optional) the phone number that will be sent a 
-                notification when the event is fired.
+            urls(list): (optional) a list of url for the endpoint that 
+                will recieve the event.
+            emails(list): (optional) a list of email that will be sent a 
+                notification hen the event is fired.
+            phone_numbers(list): (optional) a list of phone number that will be sent 
+                a notification when the event is fired.
         """
-
-        #perform some checks if neccesary in cases where conflicts may 
-        #arise
-        self._event_endpoints.setdefault(event_code, url)
-        self._event_endpoints.setdefault(event_code + "url", True)
+        self._registration_payload = {}
+        self._registration_payload["event_name"] = event_name
+        self._registration_payload["callback_urls"] = urls
+        self._registration_payload["emails"] = emails
+        self._registration_payload["sms"] = sms_numbers
 
     def event_registration_data(self):
         """
@@ -90,11 +90,7 @@ class EventRegistration(object):
         service given the event codes that have been added to the
         instance.
         """
-
-        payload = self._event_endpoints
-        payload.setdefault("token", self.token)
-
-        return payload
+        return self._registration_payload
 
 def picked_event_validator(event):
     """
