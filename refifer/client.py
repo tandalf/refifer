@@ -19,9 +19,6 @@ class Refifer(object):
     also for registering and pushing events.
 
     Args:
-        client_id(str): the client_id that uniquely identifies the client
-            making the request.
-
         access_token(str): the access_token that was gotten from the
             authentication service.
 
@@ -80,6 +77,8 @@ class Refifer(object):
             post_args(dict): data to be submitted to the server as form data
 
             method(str): http method that will be used for the request
+
+            client_id(str): the client_id for the client making the request
         
         Returns:
             response(requests.Response): a Response object that was the 
@@ -104,6 +103,7 @@ class Refifer(object):
         who owns the client_id used in instantiating this class.
 
         Args:
+            client_id(str): the client_id of the client
             event_name(str): the name of the event whose registration 
                 details is to be gotten from the server.
 
@@ -126,6 +126,7 @@ class Refifer(object):
         that are to broadcasted to when the event is fired.
 
         Args:
+            client_id(str): the client_id of the client
             event_regisration(EventRegistration): the object that encapsulates
                 the registration of an event.
 
@@ -143,6 +144,15 @@ class Refifer(object):
 
 
     def register(self, client_id, registration_payload):
+        """
+        Makes an event registration request with a raw payload
+
+        Args:
+            client_id(str): the client_id of the client
+            registration_payload(dict): a json serializable dict containing
+                the raw payload that will be submitted to the regostration
+                endpoint
+        """
         event_registraton = EventRegistration(registration_payload)
         return self.register_event(client_id, event_registration)
 
@@ -153,6 +163,7 @@ class Refifer(object):
         be broadcasted to the registed endpoints for the event.
 
         Args:
+            client_id(str): the client_id of the client
             event(Event): the event that should be fired
 
         kwargs:
@@ -181,6 +192,14 @@ class Refifer(object):
     def fire(self, client_id, event_name, payload={}, transaction_ref=None):
         """
         Publishes an event but builds an event object for you.
+
+        Args:
+            client_id(str): the client_id of the client
+            event_name(str): the name of the event
+
+        Kwargs:
+            payload(dict): the payload for the events being fired
+            transaction_ref(str): the transaction reference for the event
         """
         ref = transaction_ref if transaction_ref else str(uuid.uuid4())
         event = Event(event_name, payload=payload, transaction_ref=ref)
@@ -190,6 +209,9 @@ class Refifer(object):
     def unsubscribe_client(self, client_id):
         """
         Unsubscribes the client from events notifications.
+
+        Args:
+            client_id(str): the client_id of the client
         """
         return self.request(REGISTRATION_ENDPOINT, 
             client_id=client_id, method="DELETE")
