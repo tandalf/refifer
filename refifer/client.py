@@ -11,6 +11,7 @@ from requests.exceptions import HTTPError
 
 from .constants import RETRY_COUNT, BASE_API_ENDPOINT, FIRE_ENDPOINT
 from .exceptions import RefiferError
+from .events import Event, EventRegistration
 
 class Refifer(object):
     """
@@ -21,6 +22,9 @@ class Refifer(object):
         client_id(str): the client_id that uniquely identifies the client
             making the request.
 
+        access_token(str): the access_token that was gotten from the
+            authentication service.
+
     Kwargs:
         retry_count(int): the number of times a request will be retried on
             error.
@@ -29,10 +33,11 @@ class Refifer(object):
         proxies(dict): proxy configurations as used by the request lib
     """
 
-    def __init__(self, client_id, retry_count=RETRY_COUNT, 
+    def __init__(self, client_id, access_token, retry_count=RETRY_COUNT, 
         timeout=None, proxies=None):
 
         self.client_id = client_id
+        self.access_token = access_token
         self.timeout = timeout
         self.proxies = proxies
         self.retry_count = retry_count
@@ -40,7 +45,8 @@ class Refifer(object):
 
     def _prepare_headers(self, content_type="application/json"):
         return {"Content-Type": content_type, 
-            "X-Client-ID": self.client_id}
+            "X-Client-ID": self.client_id, 
+            "Authorization": "Bearer " + str(self.access_token)}
 
     def _make_registration(self, event_name, event_codes):
         """
