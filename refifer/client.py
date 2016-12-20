@@ -9,7 +9,7 @@ import uuid
 import requests 
 from requests.exceptions import HTTPError
 
-from .constants import RETRY_COUNT, BASE_API_ENDPOINT, FIRE_ENDPOINT
+from .constants import RETRY_COUNT, REGISTRATION_ENDPOINT, FIRE_ENDPOINT
 from .exceptions import RefiferError
 from .events import Event, EventRegistration
 
@@ -33,20 +33,21 @@ class Refifer(object):
         proxies(dict): proxy configurations as used by the request lib
     """
 
-    def __init__(self, client_id, access_token, retry_count=RETRY_COUNT, 
+    def __init__(self, access_token, retry_count=RETRY_COUNT, 
         timeout=None, proxies=None):
 
-        self.client_id = client_id
         self.access_token = access_token
         self.timeout = timeout
         self.proxies = proxies
         self.retry_count = retry_count
         self.session = requests.Session()
 
-    def _prepare_headers(self, content_type="application/json"):
-        return {"Content-Type": content_type, 
-            "X-Client-ID": self.client_id, 
+    def _prepare_headers(self, client_id, content_type="application/json", *args, **kwargs):
+        headers =  {"Content-Type": content_type, 
+            "X-Client-ID": client_id if client_id else "",
             "Authorization": "Bearer " + str(self.access_token)}
+        headers.update(kwargs)
+        return headers
 
     def _make_registration(self, event_name, event_codes):
         """
@@ -60,11 +61,12 @@ class Refifer(object):
             resource_url = "/" + resource_url
         return BASE_API_ENDPOINT + resource_url
 
-    def __call__(self, event_name, payload={}, transaction_ref=None):
+    def __call__(self, client_id, event_name, payload={}, transaction_ref=None):
         return self.fire(event_name, payload=payload, 
             transaction_ref=transaction_ref)
 
-    def request(self, endpoint, args=None, post_args=None, method=None):
+    def request(self, endpoint, args=None, post_args=None, method=None, 
+        client_id=None):
         """
         Makes a request to the notifications api and returns the response.
         if post_args are available, it makes a post request to the server.
@@ -87,7 +89,7 @@ class Refifer(object):
             method = "POST"
 
         try:
-            headers = self._prepare_headers()
+            headers = self._prepare_headers(client_id)
             return self.session.request(method, endpoint, params=args, 
                 data=post_args, timeout=self.timeout, proxies=self.proxies,
                 headers=headers)
@@ -96,7 +98,7 @@ class Refifer(object):
             response = json.loads(e.read())
             raise RefiferError(response)
 
-    def client_registration_data(self, event_name):
+    def client_registration_data(self, client_id, event_name):
         """
         Gets the events notification registration details for the client
         who owns the client_id used in instantiating this class.
@@ -109,8 +111,8 @@ class Refifer(object):
             registration_data(dict): the registration data that was used
                 in registering the event with the given name for the client.
         """
-        endpoint = self._build_endpoint("notifications/" + str(self.client_id))
-        reg_response = self.request(endpoint, method="GET").content
+        endpoint = REGISTRATION_ENDPOINT + "/" + client_id
+        reg_response = self.request(endpoint, method="GET", client_id=client_id).content
         reg_response = json.loads(reg_response)
 
         for data in reg_response["data"]:
@@ -118,7 +120,7 @@ class Refifer(object):
                 return data
 
 
-    def register_event(self, event_registration):
+    def register_event(self, client_id, event_registration):
         """
         Registers an event with the server and provides a list of endpoints
         that are to broadcasted to when the event is fired.
@@ -134,13 +136,18 @@ class Refifer(object):
         data = event_registration.event_registration_data()
 
         try:
-            return self.request(BASE_API_ENDPOINT + "/notifications",
-                post_args=json.dumps(data), method="POST")
+            return self.request(REGISTRATION_ENDPOINT,
+                post_args=json.dumps(data), method="POST", client_id=client_id)
         except HTTPError as e:
             raise RefiferError(e)
 
 
-    def fire_event(self, event, transaction_ref=None):
+    def register(self, client_id, registration_payload):
+        event_registraton = EventRegistration(registration_payload)
+        return self.register_event(client_id, event_registration)
+
+
+    def fire_event(self, client_id, event, transaction_ref=None):
         """
         Publishes an event to the server providing the payload that should
         be broadcasted to the registed endpoints for the event.
@@ -165,23 +172,24 @@ class Refifer(object):
         data = json.dumps(data)
 
         try:
-            return self.request(FIRE_ENDPOINT, post_args=data, 
+            return self.request(FIRE_ENDPOINT, client_id=client_id, post_args=data, 
                 method="POST")
         except HTTPError as e:
             raise RefiferError(e)
 
 
-    def fire(self, event_name, payload={}, transaction_ref=None):
+    def fire(self, client_id, event_name, payload={}, transaction_ref=None):
         """
         Publishes an event but builds an event object for you.
         """
         ref = transaction_ref if transaction_ref else str(uuid.uuid4())
         event = Event(event_name, payload=payload, transaction_ref=ref)
 
-        return self.fire_event(event)
+        return self.fire_event(client_id, event)
 
-    def unsubscribe_client(self):
+    def unsubscribe_client(self, client_id):
         """
         Unsubscribes the client from events notifications.
         """
-        return self.request(BASE_API_ENDPOINT + "/notifications", method="DELETE")
+        return self.request(REGISTRATION_ENDPOINT, 
+            client_id=client_id, method="DELETE")

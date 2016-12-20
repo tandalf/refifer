@@ -10,7 +10,10 @@ class TestClient(TestCase):
 
     def setUp(self):
         self.client_id = "wefinmoirg"
-        self.ref_client = Refifer(client_id=self.client_id)
+        self.access_token = "eyJhbGciOiJIUzI1NiIsImV4cCI6MTQ4MjMzMjk1Mywi" + \
+        "aWF0IjoxNDgyMjQ2NTUzfQ.eyJzYW5kYm94Ijp0cnVlfQ.zLIPHXX2iCNZvPa8BTK" + \
+        "TZ2pUeAww0dGlMNh3Mygw6po"
+        self.ref_client = Refifer(self.access_token)
 
     def test_register_event(self):
         event_name = "ordered_delivered"
@@ -21,7 +24,7 @@ class TestClient(TestCase):
         event_reg.make_payload(event_name=event_name, urls=urls)
 
         
-        resp = self.ref_client.register_event(event_reg).content
+        resp = self.ref_client.register_event(self.client_id, event_reg).content
         print resp
         resp = json.loads(resp)
 
@@ -34,20 +37,20 @@ class TestClient(TestCase):
             "https://www.this.that/note"]
 
         #assert event not yet registered
-        data = self.ref_client.client_registration_data(event_name)
+        data = self.ref_client.client_registration_data(self.client_id, event_name)
         self.assertEqual(None, data)
 
         #register event
         event_reg = EventRegistration()
         event_reg.make_payload(event_name=event_name, urls=urls)
 
-        resp = self.ref_client.register_event(event_reg).content
+        resp = self.ref_client.register_event(self.client_id, event_reg).content
         print resp
         resp = json.loads(resp)
 
         #assert that getting client registration detail for event now
         #returns data.
-        data = self.ref_client.client_registration_data(event_name)
+        data = self.ref_client.client_registration_data(self.client_id, event_name)
         self.assertIn(urls[0], data["callback_urls"])
         
     def test_fire_event(self):
@@ -60,11 +63,11 @@ class TestClient(TestCase):
         }
         event = Event(event_name, payload=payload)
 
-        resp = self.ref_client.fire_event(event).content
+        resp = self.ref_client.fire_event(self.client_id, event).content
         resp = json.loads(resp)
         print resp
 
         self.assertEqual("success", resp["status"])
 
     def tearDown(self):
-        self.ref_client.unsubscribe_client()
+        self.ref_client.unsubscribe_client(self.client_id)
