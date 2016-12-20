@@ -59,7 +59,7 @@ class Refifer(object):
         return BASE_API_ENDPOINT + resource_url
 
     def __call__(self, client_id, event_name, payload={}, transaction_ref=None):
-        return self.fire(event_name, payload=payload, 
+        return self.fire(client_id, event_name, payload=payload, 
             transaction_ref=transaction_ref)
 
     def request(self, endpoint, args=None, post_args=None, method=None, 

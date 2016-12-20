@@ -63,7 +63,7 @@ class TestClient(TestCase):
         }
         event = Event(event_name, payload=payload)
 
-        resp = self.ref_client.fire_event(self.client_id, event).content
+        resp = self.ref_client(self.client_id, event.name, event.get_data()).content
         resp = json.loads(resp)
         print resp
 
