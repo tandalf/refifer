@@ -1,4 +1,5 @@
 from unittest import TestCase
+import os
 import json
 
 import requests
@@ -9,10 +10,11 @@ from refifer.client import Refifer
 class TestClient(TestCase):
 
     def setUp(self):
-        self.client_id = "wefinmoirg"
-        self.access_token = "eyJhbGciOiJIUzI1NiIsImV4cCI6MTQ4MjMzMjk1Mywi" + \
-        "aWF0IjoxNDgyMjQ2NTUzfQ.eyJzYW5kYm94Ijp0cnVlfQ.zLIPHXX2iCNZvPa8BTK" + \
-        "TZ2pUeAww0dGlMNh3Mygw6po"
+        self.client_id = "Fetchr"
+        self.access_token = os.environ.get("FETCHR_TOKEN", None)
+        if self.access_token == None:
+            print("Access token not set. Please set the FETCHR_TOKEN" + \
+            " environment variable")
         self.ref_client = Refifer(self.access_token)
 
     def test_register_event(self):
@@ -28,7 +30,7 @@ class TestClient(TestCase):
         print resp
         resp = json.loads(resp)
 
-        self.assertEqual("successful", resp["status"])
+        self.assertEqual("success", resp["status"])
         self.assertIn(urls[0], resp["data"][0]["callback_urls"])
 
     def test_client_registration_data(self):
@@ -63,7 +65,7 @@ class TestClient(TestCase):
         }
         event = Event(event_name, payload=payload)
 
-        resp = self.ref_client(self.client_id, event.name, event.get_data()).content
+        resp = self.ref_client(event.name, event.get_data(), self.client_id).content
         resp = json.loads(resp)
         print resp
 
