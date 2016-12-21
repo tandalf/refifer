@@ -39,9 +39,10 @@ class Refifer(object):
         self.retry_count = retry_count
         self.session = requests.Session()
 
-    def _prepare_headers(self, client_id, content_type="application/json", *args, **kwargs):
+    def _prepare_headers(self, client_id, content_type="application/json", 
+        *args, **kwargs):
         headers =  {"Content-Type": content_type, 
-            "X-Client-ID": client_id if client_id else "",
+            "X-Client-ID": client_id,
             "Authorization": "Bearer " + str(self.access_token)}
         headers.update(kwargs)
         return headers
@@ -58,8 +59,9 @@ class Refifer(object):
             resource_url = "/" + resource_url
         return BASE_API_ENDPOINT + resource_url
 
-    def __call__(self, client_id, event_name, payload={}, transaction_ref=None):
-        return self.fire(client_id, event_name, payload=payload, 
+    def __call__(self, event_name, payload={}, client_id=None, 
+        transaction_ref=None):
+        return self.fire(event_name, payload=payload, client_id=client_id, 
             transaction_ref=transaction_ref)
 
     def request(self, endpoint, args=None, post_args=None, method=None, 
@@ -137,8 +139,9 @@ class Refifer(object):
         data = event_registration.event_registration_data()
 
         try:
-            return self.request(REGISTRATION_ENDPOINT,
+            resp = self.request(REGISTRATION_ENDPOINT,
                 post_args=json.dumps(data), method="POST", client_id=client_id)
+            return resp
         except HTTPError as e:
             raise RefiferError(e)
 
@@ -157,16 +160,16 @@ class Refifer(object):
         return self.register_event(client_id, event_registration)
 
 
-    def fire_event(self, client_id, event, transaction_ref=None):
+    def fire_event(self, event, transaction_ref=None):
         """
         Publishes an event to the server providing the payload that should
         be broadcasted to the registed endpoints for the event.
 
         Args:
-            client_id(str): the client_id of the client
             event(Event): the event that should be fired
 
         kwargs:
+            client_id(str): the client_id of the client
             transaction_ref(str): transaction reference key
 
         Returns:
@@ -183,28 +186,29 @@ class Refifer(object):
         data = json.dumps(data)
 
         try:
-            return self.request(FIRE_ENDPOINT, client_id=client_id, post_args=data, 
+            return self.request(FIRE_ENDPOINT, post_args=data, 
                 method="POST")
         except HTTPError as e:
             raise RefiferError(e)
 
 
-    def fire(self, client_id, event_name, payload={}, transaction_ref=None):
+    def fire(self, event_name, payload={}, client_id=None, transaction_ref=None):
         """
         Publishes an event but builds an event object for you.
 
         Args:
-            client_id(str): the client_id of the client
             event_name(str): the name of the event
 
         Kwargs:
             payload(dict): the payload for the events being fired
+            client_id(str): the client_id of the client
             transaction_ref(str): the transaction reference for the event
         """
         ref = transaction_ref if transaction_ref else str(uuid.uuid4())
-        event = Event(event_name, payload=payload, transaction_ref=ref)
+        event = Event(event_name, payload=payload, client_id=client_id, 
+            transaction_ref=ref)
 
-        return self.fire_event(client_id, event)
+        return self.fire_event(event)
 
     def unsubscribe_client(self, client_id):
         """
@@ -213,5 +217,5 @@ class Refifer(object):
         Args:
             client_id(str): the client_id of the client
         """
-        return self.request(REGISTRATION_ENDPOINT, 
+        return self.request(REGISTRATION_ENDPOINT + "/" + str(client_id), 
             client_id=client_id, method="DELETE")

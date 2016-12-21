@@ -15,8 +15,9 @@ class Event(object):
     be validated by the callable.
     """
 
-    def __init__(self, name, transaction_ref=None, payload={}):
+    def __init__(self, name, payload={}, client_id=None, transaction_ref=None):
         self.name = name
+        self.client_id = client_id
         self.payload = payload
         self.transaction_ref = transaction_ref
         self._validators = []
@@ -29,6 +30,7 @@ class Event(object):
 
     def get_data(self):
         data = {
+            "client_id": self.client_id,
             "event_name": self.name,
             "transaction_reference": str(self.transaction_ref), 
             "payload": self.payload
