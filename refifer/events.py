@@ -2,6 +2,7 @@
 Module which contains classes and other functionalities for handling 
 events
 """
+import uuid
 
 from .exceptions import ValidationError
 
@@ -19,7 +20,10 @@ class Event(object):
         self.name = name
         self.client_id = client_id
         self.payload = payload
-        self.transaction_ref = transaction_ref
+
+        ref = transaction_ref if transaction_ref else str(uuid.uuid4())
+        self.transaction_ref = ref
+
         self._validators = []
 
     def add_payload_validator(self, validator):
@@ -56,13 +60,16 @@ class EventRegistration(object):
 
     kwargs:
         registration_payload(dict): an optional keyword arguement that 
-        contains the payload that will be posted to the server.
+            contains the payload that will be posted to the server.
+        client_id(str): the id of the client the event is being registered
+            for
     """
 
-    def __init__(self, registration_payload={}):
+    def __init__(self, registration_payload={}, client_id=None):
         self._registration_payload = registration_payload
+        self.client_id = client_id
 
-    def make_payload(self, event_name, urls=None, emails=None, 
+    def set_registration_info(self, event_name, urls=None, emails=None, 
         sms_numbers=None):
         """
         Adds an event to the list of events that are to be registered, 

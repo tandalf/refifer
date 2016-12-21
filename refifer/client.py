@@ -15,7 +15,7 @@ from .events import Event, EventRegistration
 
 class Refifer(object):
     """
-    Class used for making api calls to fetchr's notification service and
+    Client used for making api calls to fetchr's notification service and
     also for registering and pushing events.
 
     Args:
@@ -99,36 +99,38 @@ class Refifer(object):
             response = json.loads(e.read())
             raise RefiferError(response)
 
-    def client_registration_data(self, client_id, event_name):
+    def client_registration_data(self, event_name, client_id):
         """
         Gets the events notification registration details for the client
         who owns the client_id used in instantiating this class.
 
         Args:
-            client_id(str): the client_id of the client
             event_name(str): the name of the event whose registration 
                 details is to be gotten from the server.
+            client_id(str): the client_id of the client
 
         Returns:
             registration_data(dict): the registration data that was used
                 in registering the event with the given name for the client.
+
+        Note:
+            this method is NOT currently supported at the service.
         """
         endpoint = REGISTRATION_ENDPOINT + "/" + client_id
         reg_response = self.request(endpoint, method="GET", client_id=client_id).content
         reg_response = json.loads(reg_response)
-
+        print reg_response
         for data in reg_response["data"]:
             if data["event_name"] == event_name:
                 return data
 
 
-    def register_event(self, client_id, event_registration):
+    def register_event(self, event_registration):
         """
         Registers an event with the server and provides a list of endpoints
         that are to broadcasted to when the event is fired.
 
         Args:
-            client_id(str): the client_id of the client
             event_regisration(EventRegistration): the object that encapsulates
                 the registration of an event.
 
@@ -137,6 +139,7 @@ class Refifer(object):
                 result of registering an event.
         """
         data = event_registration.event_registration_data()
+        client_id = event_registration.client_id
 
         try:
             resp = self.request(REGISTRATION_ENDPOINT,
@@ -146,31 +149,28 @@ class Refifer(object):
             raise RefiferError(e)
 
 
-    def register(self, client_id, registration_payload):
+    def register(self, registration_payload, client_id):
         """
         Makes an event registration request with a raw payload
 
         Args:
-            client_id(str): the client_id of the client
             registration_payload(dict): a json serializable dict containing
                 the raw payload that will be submitted to the regostration
                 endpoint
+            client_id(str): the client_id of the client
         """
-        event_registraton = EventRegistration(registration_payload)
+        event_registraton = EventRegistration(registration_payload, client_id)
         return self.register_event(client_id, event_registration)
 
 
-    def fire_event(self, event, transaction_ref=None):
+    def fire_event(self, event):
         """
-        Publishes an event to the server providing the payload that should
-        be broadcasted to the registed endpoints for the event.
+        Publishes an event object to the server. The event object includes 
+        the payload that should be broadcasted to the registed endpoints 
+        for the event.
 
         Args:
             event(Event): the event that should be fired
-
-        kwargs:
-            client_id(str): the client_id of the client
-            transaction_ref(str): transaction reference key
 
         Returns:
             response(requests.Response): response gotten from firing event
@@ -194,7 +194,8 @@ class Refifer(object):
 
     def fire(self, event_name, payload={}, client_id=None, transaction_ref=None):
         """
-        Publishes an event but builds an event object for you.
+        Publishes an event but builds an event object for you. You have to
+        provide the necessary parameters used in building the event object.
 
         Args:
             event_name(str): the name of the event
