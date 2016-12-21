@@ -58,7 +58,7 @@ class EventRegistration(object):
     be build by adding events to the registration object using the 
     exposed methods.
 
-    kwargs:
+    keyword Args:
         registration_payload(dict): an optional keyword arguement that 
             contains the payload that will be posted to the server.
         client_id(str): the id of the client the event is being registered
@@ -79,7 +79,7 @@ class EventRegistration(object):
         Args:
             event_name(str): the code that uniquely identifies the event.
 
-        Kwargs:
+        Keyword Args:
             urls(list): (optional) a list of url for the endpoint that 
                 will recieve the event.
             emails(list): (optional) a list of email that will be sent a 

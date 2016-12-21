@@ -22,7 +22,7 @@ class Refifer(object):
         access_token(str): the access_token that was gotten from the
             authentication service.
 
-    Kwargs:
+    Keyword Args:
         retry_count(int): the number of times a request will be retried on
             error.
         timeout(int): the number of seconds the request should wait before
@@ -73,7 +73,7 @@ class Refifer(object):
         Args:
             endpoint(str): the url endpoint to make the request on
 
-        Kwargs:
+        Keyword Args:
             args(dict): url parameters structured as a dict
 
             post_args(dict): data to be submitted to the server as form data
@@ -83,8 +83,8 @@ class Refifer(object):
             client_id(str): the client_id for the client making the request
         
         Returns:
-            response(requests.Response): a Response object that was the 
-                result of the call to the server.
+            requests.Response: a Response object that was the result of the 
+            call to the server.
         """
         if post_args:
             method = "POST"
@@ -110,8 +110,8 @@ class Refifer(object):
             client_id(str): the client_id of the client
 
         Returns:
-            registration_data(dict): the registration data that was used
-                in registering the event with the given name for the client.
+            dict: the registration data that was used in registering the 
+            event with the given name for the client.
 
         Note:
             this method is NOT currently supported at the service.
@@ -135,8 +135,8 @@ class Refifer(object):
                 the registration of an event.
 
         Returns:
-            response(requests.Response); the Response object which is the 
-                result of registering an event.
+            requests.Response: the Response object which is the result of 
+            registering an event.
         """
         data = event_registration.event_registration_data()
         client_id = event_registration.client_id
@@ -158,6 +158,10 @@ class Refifer(object):
                 the raw payload that will be submitted to the regostration
                 endpoint
             client_id(str): the client_id of the client
+
+        Returns:
+            requests.Response: the Response object which is the result of 
+            registering an event.
         """
         event_registraton = EventRegistration(registration_payload, client_id)
         return self.register_event(client_id, event_registration)
@@ -173,7 +177,7 @@ class Refifer(object):
             event(Event): the event that should be fired
 
         Returns:
-            response(requests.Response): response gotten from firing event
+            requests.Response: response gotten from firing event
         """
         data = event.get_data()
         data_ref = data.get("transaction_reference", None)
@@ -200,10 +204,13 @@ class Refifer(object):
         Args:
             event_name(str): the name of the event
 
-        Kwargs:
+        Keyword Args:
             payload(dict): the payload for the events being fired
             client_id(str): the client_id of the client
             transaction_ref(str): the transaction reference for the event
+
+        Returns:
+            requests.Response: response gotten from firing event
         """
         ref = transaction_ref if transaction_ref else str(uuid.uuid4())
         event = Event(event_name, payload=payload, client_id=client_id, 
@@ -217,6 +224,9 @@ class Refifer(object):
 
         Args:
             client_id(str): the client_id of the client
+
+        Returns:
+            requests.Response: response gotten from unsubscribing
         """
         return self.request(REGISTRATION_ENDPOINT + "/" + str(client_id), 
             client_id=client_id, method="DELETE")
