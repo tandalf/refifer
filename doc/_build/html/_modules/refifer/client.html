@@ -1,0 +1,319 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>refifer.client &#8212; Refifer 0.1.5 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for refifer.client</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module used for connecting with the fetchr&#39;s notification service.</span>
+<span class="sd">This module uses the request library extensively and the responses are</span>
+<span class="sd">usually requests.Response objects</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="kn">import</span> <span class="nn">requests</span> 
+<span class="kn">from</span> <span class="nn">requests.exceptions</span> <span class="k">import</span> <span class="n">HTTPError</span>
+
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="k">import</span> <span class="n">RETRY_COUNT</span><span class="p">,</span> <span class="n">REGISTRATION_ENDPOINT</span><span class="p">,</span> <span class="n">FIRE_ENDPOINT</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="k">import</span> <span class="n">RefiferError</span>
+<span class="kn">from</span> <span class="nn">.events</span> <span class="k">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">EventRegistration</span>
+
+<div class="viewcode-block" id="Refifer"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer">[docs]</a><span class="k">class</span> <span class="nc">Refifer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Client used for making api calls to fetchr&#39;s notification service and</span>
+<span class="sd">    also for registering and pushing events.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        access_token(str): the access_token that was gotten from the</span>
+<span class="sd">            authentication service.</span>
+
+<span class="sd">    Keyword Args:</span>
+<span class="sd">        retry_count(int): the number of times a request will be retried on</span>
+<span class="sd">            error.</span>
+<span class="sd">        timeout(int): the number of seconds the request should wait before</span>
+<span class="sd">            timing-out the request.</span>
+<span class="sd">        proxies(dict): proxy configurations as used by the request lib</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">access_token</span><span class="p">,</span> <span class="n">retry_count</span><span class="o">=</span><span class="n">RETRY_COUNT</span><span class="p">,</span> 
+        <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">proxies</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_token</span> <span class="o">=</span> <span class="n">access_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proxies</span> <span class="o">=</span> <span class="n">proxies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retry_count</span> <span class="o">=</span> <span class="n">retry_count</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s2">&quot;application/json&quot;</span><span class="p">,</span> 
+        <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">headers</span> <span class="o">=</span>  <span class="p">{</span><span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="n">content_type</span><span class="p">,</span> 
+            <span class="s2">&quot;X-Client-ID&quot;</span><span class="p">:</span> <span class="n">client_id</span><span class="p">,</span>
+            <span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_token</span><span class="p">)}</span>
+        <span class="n">headers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">headers</span>
+
+    <span class="k">def</span> <span class="nf">_make_registration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_name</span><span class="p">,</span> <span class="n">event_codes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        register a client to recieve notification for the various event </span>
+<span class="sd">        codes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_build_endpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource_url</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">resource_url</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;/&quot;</span><span class="p">:</span>
+            <span class="n">resource_url</span> <span class="o">=</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">resource_url</span>
+        <span class="k">return</span> <span class="n">BASE_API_ENDPOINT</span> <span class="o">+</span> <span class="n">resource_url</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_name</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="p">{},</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">transaction_ref</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">event_name</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">,</span> 
+            <span class="n">transaction_ref</span><span class="o">=</span><span class="n">transaction_ref</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Refifer.request"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer.request">[docs]</a>    <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">post_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Makes a request to the notifications api and returns the response.</span>
+<span class="sd">        if post_args are available, it makes a post request to the server.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            endpoint(str): the url endpoint to make the request on</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            args(dict): url parameters structured as a dict</span>
+
+<span class="sd">            post_args(dict): data to be submitted to the server as form data</span>
+
+<span class="sd">            method(str): http method that will be used for the request</span>
+
+<span class="sd">            client_id(str): the client_id for the client making the request</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            requests.Response: a Response object that was the result of the </span>
+<span class="sd">            call to the server.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">post_args</span><span class="p">:</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;POST&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_headers</span><span class="p">(</span><span class="n">client_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> 
+                <span class="n">data</span><span class="o">=</span><span class="n">post_args</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">timeout</span><span class="p">,</span> <span class="n">proxies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">proxies</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="n">HTTPError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="k">raise</span> <span class="n">RefiferError</span><span class="p">(</span><span class="n">response</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Refifer.client_registration_data"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer.client_registration_data">[docs]</a>    <span class="k">def</span> <span class="nf">client_registration_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_name</span><span class="p">,</span> <span class="n">client_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the events notification registration details for the client</span>
+<span class="sd">        who owns the client_id used in instantiating this class.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event_name(str): the name of the event whose registration </span>
+<span class="sd">                details is to be gotten from the server.</span>
+<span class="sd">            client_id(str): the client_id of the client</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: the registration data that was used in registering the </span>
+<span class="sd">            event with the given name for the client.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            this method is NOT currently supported at the service.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">endpoint</span> <span class="o">=</span> <span class="n">REGISTRATION_ENDPOINT</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">client_id</span>
+        <span class="n">reg_response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;GET&quot;</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">)</span><span class="o">.</span><span class="n">content</span>
+        <span class="n">reg_response</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">reg_response</span><span class="p">)</span>
+        <span class="nb">print</span> <span class="n">reg_response</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">reg_response</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;event_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">event_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">data</span></div>
+
+
+<div class="viewcode-block" id="Refifer.register_event"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer.register_event">[docs]</a>    <span class="k">def</span> <span class="nf">register_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_registration</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Registers an event with the server and provides a list of endpoints</span>
+<span class="sd">        that are to broadcasted to when the event is fired.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event_regisration(EventRegistration): the object that encapsulates</span>
+<span class="sd">                the registration of an event.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            requests.Response: the Response object which is the result of </span>
+<span class="sd">            registering an event.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">event_registration</span><span class="o">.</span><span class="n">event_registration_data</span><span class="p">()</span>
+        <span class="n">client_id</span> <span class="o">=</span> <span class="n">event_registration</span><span class="o">.</span><span class="n">client_id</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">REGISTRATION_ENDPOINT</span><span class="p">,</span>
+                <span class="n">post_args</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;POST&quot;</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">resp</span>
+        <span class="k">except</span> <span class="n">HTTPError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">RefiferError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Refifer.register"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">registration_payload</span><span class="p">,</span> <span class="n">client_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Makes an event registration request with a raw payload</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            registration_payload(dict): a json serializable dict containing</span>
+<span class="sd">                the raw payload that will be submitted to the regostration</span>
+<span class="sd">                endpoint</span>
+<span class="sd">            client_id(str): the client_id of the client</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            requests.Response: the Response object which is the result of </span>
+<span class="sd">            registering an event.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">event_registraton</span> <span class="o">=</span> <span class="n">EventRegistration</span><span class="p">(</span><span class="n">registration_payload</span><span class="p">,</span> <span class="n">client_id</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">register_event</span><span class="p">(</span><span class="n">client_id</span><span class="p">,</span> <span class="n">event_registration</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Refifer.fire_event"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer.fire_event">[docs]</a>    <span class="k">def</span> <span class="nf">fire_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Publishes an event object to the server. The event object includes </span>
+<span class="sd">        the payload that should be broadcasted to the registed endpoints </span>
+<span class="sd">        for the event.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event(Event): the event that should be fired</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            requests.Response: response gotten from firing event</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
+        <span class="n">data_ref</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;transaction_reference&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">data_ref</span> <span class="k">if</span> <span class="n">data_ref</span> <span class="k">else</span> <span class="n">transaction_ref</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ref</span><span class="p">:</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;transaction_reference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">FIRE_ENDPOINT</span><span class="p">,</span> <span class="n">post_args</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> 
+                <span class="n">method</span><span class="o">=</span><span class="s2">&quot;POST&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">HTTPError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">RefiferError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Refifer.fire"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer.fire">[docs]</a>    <span class="k">def</span> <span class="nf">fire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_name</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="p">{},</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transaction_ref</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Publishes an event but builds an event object for you. You have to</span>
+<span class="sd">        provide the necessary parameters used in building the event object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event_name(str): the name of the event</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            payload(dict): the payload for the events being fired</span>
+<span class="sd">            client_id(str): the client_id of the client</span>
+<span class="sd">            transaction_ref(str): the transaction reference for the event</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            requests.Response: response gotten from firing event</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">transaction_ref</span> <span class="k">if</span> <span class="n">transaction_ref</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">event_name</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">,</span> 
+            <span class="n">transaction_ref</span><span class="o">=</span><span class="n">ref</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fire_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Refifer.unsubscribe_client"><a class="viewcode-back" href="../../refifer.html#refifer.client.Refifer.unsubscribe_client">[docs]</a>    <span class="k">def</span> <span class="nf">unsubscribe_client</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">client_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unsubscribes the client from events notifications.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            client_id(str): the client_id of the client</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            requests.Response: response gotten from unsubscribing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">REGISTRATION_ENDPOINT</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">client_id</span><span class="p">),</span> 
+            <span class="n">client_id</span><span class="o">=</span><span class="n">client_id</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;DELETE&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Timothy Ebiuwhe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'refifer',
   packages = ['refifer'], 
-  version = '0.1.4',
+  version = '0.1.5',
   description = 'A client library used for registering and publishing' +\
       ' events on fetchr\'s notification service',
   author = 'Timothy Ebiuwhe',

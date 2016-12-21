@@ -1,0 +1,501 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>refifer package &#8212; Refifer 0.1.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="setup module" href="setup.html" />
+    <link rel="prev" title="refifer" href="modules.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="refifer-package">
+<h1>refifer package<a class="headerlink" href="#refifer-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-refifer.client">
+<span id="refifer-client-module"></span><h2>refifer.client module<a class="headerlink" href="#module-refifer.client" title="Permalink to this headline">¶</a></h2>
+<p>Module used for connecting with the fetchr&#8217;s notification service.
+This module uses the request library extensively and the responses are
+usually requests.Response objects</p>
+<dl class="class">
+<dt id="refifer.client.Refifer">
+<em class="property">class </em><code class="descclassname">refifer.client.</code><code class="descname">Refifer</code><span class="sig-paren">(</span><em>access_token</em>, <em>retry_count=10</em>, <em>timeout=None</em>, <em>proxies=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Client used for making api calls to fetchr&#8217;s notification service and
+also for registering and pushing events.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>access_token</strong> (<em>str</em>) &#8211; the access_token that was gotten from the
+authentication service.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Keyword Arguments:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
+<li><strong>retry_count</strong> (<em>int</em>) &#8211; the number of times a request will be retried on
+error.</li>
+<li><strong>timeout</strong> (<em>int</em>) &#8211; the number of seconds the request should wait before
+timing-out the request.</li>
+<li><strong>proxies</strong> (<em>dict</em>) &#8211; proxy configurations as used by the request lib</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="refifer.client.Refifer.client_registration_data">
+<code class="descname">client_registration_data</code><span class="sig-paren">(</span><em>event_name</em>, <em>client_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer.client_registration_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer.client_registration_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the events notification registration details for the client
+who owns the client_id used in instantiating this class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>event_name</strong> (<em>str</em>) &#8211; the name of the event whose registration
+details is to be gotten from the server.</li>
+<li><strong>client_id</strong> (<em>str</em>) &#8211; the client_id of the client</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the registration data that was used in registering the
+event with the given name for the client.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">this method is NOT currently supported at the service.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="refifer.client.Refifer.fire">
+<code class="descname">fire</code><span class="sig-paren">(</span><em>event_name</em>, <em>payload={}</em>, <em>client_id=None</em>, <em>transaction_ref=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer.fire"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer.fire" title="Permalink to this definition">¶</a></dt>
+<dd><p>Publishes an event but builds an event object for you. You have to
+provide the necessary parameters used in building the event object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>event_name</strong> (<em>str</em>) &#8211; the name of the event</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Keyword Arguments:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>payload</strong> (<em>dict</em>) &#8211; the payload for the events being fired</li>
+<li><strong>client_id</strong> (<em>str</em>) &#8211; the client_id of the client</li>
+<li><strong>transaction_ref</strong> (<em>str</em>) &#8211; the transaction reference for the event</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">response gotten from firing event</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">requests.Response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="refifer.client.Refifer.fire_event">
+<code class="descname">fire_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer.fire_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer.fire_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Publishes an event object to the server. The event object includes
+the payload that should be broadcasted to the registed endpoints
+for the event.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference internal" href="#refifer.events.Event" title="refifer.events.Event"><em>Event</em></a>) &#8211; the event that should be fired</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response gotten from firing event</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">requests.Response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="refifer.client.Refifer.register">
+<code class="descname">register</code><span class="sig-paren">(</span><em>registration_payload</em>, <em>client_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer.register"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes an event registration request with a raw payload</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>registration_payload</strong> (<em>dict</em>) &#8211; a json serializable dict containing
+the raw payload that will be submitted to the regostration
+endpoint</li>
+<li><strong>client_id</strong> (<em>str</em>) &#8211; the client_id of the client</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">the Response object which is the result of
+registering an event.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">requests.Response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="refifer.client.Refifer.register_event">
+<code class="descname">register_event</code><span class="sig-paren">(</span><em>event_registration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer.register_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer.register_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers an event with the server and provides a list of endpoints
+that are to broadcasted to when the event is fired.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event_regisration</strong> (<a class="reference internal" href="#refifer.events.EventRegistration" title="refifer.events.EventRegistration"><em>EventRegistration</em></a>) &#8211; the object that encapsulates
+the registration of an event.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the Response object which is the result of
+registering an event.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">requests.Response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="refifer.client.Refifer.request">
+<code class="descname">request</code><span class="sig-paren">(</span><em>endpoint</em>, <em>args=None</em>, <em>post_args=None</em>, <em>method=None</em>, <em>client_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer.request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a request to the notifications api and returns the response.
+if post_args are available, it makes a post request to the server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>endpoint</strong> (<em>str</em>) &#8211; the url endpoint to make the request on</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Keyword Arguments:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> (<em>dict</em>) &#8211; url parameters structured as a dict</li>
+<li><strong>post_args</strong> (<em>dict</em>) &#8211; data to be submitted to the server as form data</li>
+<li><strong>method</strong> (<em>str</em>) &#8211; http method that will be used for the request</li>
+<li><strong>client_id</strong> (<em>str</em>) &#8211; the client_id for the client making the request</li>
+</ul>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a Response object that was the result of the
+call to the server.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">requests.Response</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="refifer.client.Refifer.unsubscribe_client">
+<code class="descname">unsubscribe_client</code><span class="sig-paren">(</span><em>client_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/client.html#Refifer.unsubscribe_client"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.client.Refifer.unsubscribe_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unsubscribes the client from events notifications.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>client_id</strong> (<em>str</em>) &#8211; the client_id of the client</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">response gotten from unsubscribing</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">requests.Response</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-refifer.constants">
+<span id="refifer-constants-module"></span><h2>refifer.constants module<a class="headerlink" href="#module-refifer.constants" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-refifer.events">
+<span id="refifer-events-module"></span><h2>refifer.events module<a class="headerlink" href="#module-refifer.events" title="Permalink to this headline">¶</a></h2>
+<p>Module which contains classes and other functionalities for handling
+events</p>
+<dl class="class">
+<dt id="refifer.events.Event">
+<em class="property">class </em><code class="descclassname">refifer.events.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>name</em>, <em>payload={}</em>, <em>client_id=None</em>, <em>transaction_ref=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Represents an event that will be sent to the notification service.
+This class uses validators to validate the payload of its instances.</p>
+<p>Validators are callables which takes an event as
+input and raises an exception if the payload could not
+be validated by the callable.</p>
+<dl class="method">
+<dt id="refifer.events.Event.add_payload_validator">
+<code class="descname">add_payload_validator</code><span class="sig-paren">(</span><em>validator</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#Event.add_payload_validator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.Event.add_payload_validator" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="refifer.events.Event.clear_validators">
+<code class="descname">clear_validators</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#Event.clear_validators"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.Event.clear_validators" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="refifer.events.Event.get_data">
+<code class="descname">get_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#Event.get_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.Event.get_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="refifer.events.Event.validate">
+<code class="descname">validate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#Event.validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.Event.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="refifer.events.EventRegistration">
+<em class="property">class </em><code class="descclassname">refifer.events.</code><code class="descname">EventRegistration</code><span class="sig-paren">(</span><em>registration_payload={}</em>, <em>client_id=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#EventRegistration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.EventRegistration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Class that represents the data used for registering events notification
+on the service.</p>
+<p>The registration payload can be set by users but the payload can also
+be build by adding events to the registration object using the
+exposed methods.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Keyword Arguments:</th></tr>
+<tr class="field-odd field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
+<li><strong>registration_payload</strong> (<em>dict</em>) &#8211; an optional keyword arguement that
+contains the payload that will be posted to the server.</li>
+<li><strong>client_id</strong> (<em>str</em>) &#8211; the id of the client the event is being registered
+for</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="refifer.events.EventRegistration.event_registration_data">
+<code class="descname">event_registration_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#EventRegistration.event_registration_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.EventRegistration.event_registration_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the data that will be posted to the notification
+service given the event codes that have been added to the
+instance.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="refifer.events.EventRegistration.set_registration_info">
+<code class="descname">set_registration_info</code><span class="sig-paren">(</span><em>event_name</em>, <em>urls=None</em>, <em>emails=None</em>, <em>sms_numbers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#EventRegistration.set_registration_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.EventRegistration.set_registration_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an event to the list of events that are to be registered,
+including the url, email, or sms number that are to recieve
+notifications about the event for a given client.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>event_name</strong> (<em>str</em>) &#8211; the code that uniquely identifies the event.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Keyword Arguments:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><ul class="first last simple">
+<li><strong>urls</strong> (<em>list</em>) &#8211; (optional) a list of url for the endpoint that
+will recieve the event.</li>
+<li><strong>emails</strong> (<em>list</em>) &#8211; (optional) a list of email that will be sent a
+notification hen the event is fired.</li>
+<li><strong>phone_numbers</strong> (<em>list</em>) &#8211; (optional) a list of phone number that will be sent
+a notification when the event is fired.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="refifer.events.picked_event_validator">
+<code class="descclassname">refifer.events.</code><code class="descname">picked_event_validator</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/refifer/events.html#picked_event_validator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.events.picked_event_validator" title="Permalink to this definition">¶</a></dt>
+<dd><p>validator used for validating the fields of a <cite>picked</cite> event</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference internal" href="#refifer.events.Event" title="refifer.events.Event"><em>Event</em></a>) &#8211; the event that is to be validated.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-refifer.exceptions">
+<span id="refifer-exceptions-module"></span><h2>refifer.exceptions module<a class="headerlink" href="#module-refifer.exceptions" title="Permalink to this headline">¶</a></h2>
+<p>Exception Module which contains the exceptions that will be raised when
+certain problems occur in the library.</p>
+<dl class="exception">
+<dt id="refifer.exceptions.AuthorizationError">
+<em class="property">exception </em><code class="descclassname">refifer.exceptions.</code><code class="descname">AuthorizationError</code><a class="reference internal" href="_modules/refifer/exceptions.html#AuthorizationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.exceptions.AuthorizationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#refifer.exceptions.RefiferError" title="refifer.exceptions.RefiferError"><code class="xref py py-class docutils literal"><span class="pre">refifer.exceptions.RefiferError</span></code></a></p>
+<p>Exception raised when the client could not be authenticated on the
+server.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="refifer.exceptions.ClientNotRegisteredError">
+<em class="property">exception </em><code class="descclassname">refifer.exceptions.</code><code class="descname">ClientNotRegisteredError</code><a class="reference internal" href="_modules/refifer/exceptions.html#ClientNotRegisteredError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.exceptions.ClientNotRegisteredError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#refifer.exceptions.RefiferError" title="refifer.exceptions.RefiferError"><code class="xref py py-class docutils literal"><span class="pre">refifer.exceptions.RefiferError</span></code></a></p>
+<p>Exception to be raise when the client has not registered for
+notifications on the server</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="refifer.exceptions.DuplicateEventError">
+<em class="property">exception </em><code class="descclassname">refifer.exceptions.</code><code class="descname">DuplicateEventError</code><a class="reference internal" href="_modules/refifer/exceptions.html#DuplicateEventError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.exceptions.DuplicateEventError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#refifer.exceptions.RefiferError" title="refifer.exceptions.RefiferError"><code class="xref py py-class docutils literal"><span class="pre">refifer.exceptions.RefiferError</span></code></a></p>
+<p>Raised when a duplicate event has been disallowed by the server.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="refifer.exceptions.RefiferError">
+<em class="property">exception </em><code class="descclassname">refifer.exceptions.</code><code class="descname">RefiferError</code><a class="reference internal" href="_modules/refifer/exceptions.html#RefiferError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.exceptions.RefiferError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></code></p>
+<p>Base exception class which all Exceptions in this library should
+inherit from.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="refifer.exceptions.ValidationError">
+<em class="property">exception </em><code class="descclassname">refifer.exceptions.</code><code class="descname">ValidationError</code><a class="reference internal" href="_modules/refifer/exceptions.html#ValidationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.exceptions.ValidationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#refifer.exceptions.RefiferError" title="refifer.exceptions.RefiferError"><code class="xref py py-class docutils literal"><span class="pre">refifer.exceptions.RefiferError</span></code></a></p>
+<p>Exception raised when the payload of an event fails to pass some
+validation</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="refifer.exceptions.ValueError">
+<em class="property">exception </em><code class="descclassname">refifer.exceptions.</code><code class="descname">ValueError</code><a class="reference internal" href="_modules/refifer/exceptions.html#ValueError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#refifer.exceptions.ValueError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#refifer.exceptions.RefiferError" title="refifer.exceptions.RefiferError"><code class="xref py py-class docutils literal"><span class="pre">refifer.exceptions.RefiferError</span></code></a></p>
+<p>Raised in place of the default ValueError.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-refifer">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-refifer" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">refifer package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-refifer.client">refifer.client module</a></li>
+<li><a class="reference internal" href="#module-refifer.constants">refifer.constants module</a></li>
+<li><a class="reference internal" href="#module-refifer.events">refifer.events module</a></li>
+<li><a class="reference internal" href="#module-refifer.exceptions">refifer.exceptions module</a></li>
+<li><a class="reference internal" href="#module-refifer">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">refifer</a><ul>
+      <li>Previous: <a href="modules.html" title="previous chapter">refifer</a></li>
+      <li>Next: <a href="setup.html" title="next chapter">setup module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/refifer.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Timothy Ebiuwhe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/refifer.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

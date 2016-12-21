@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>refifer.events &#8212; Refifer 0.1.5 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for refifer.events</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module which contains classes and other functionalities for handling </span>
+<span class="sd">events</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="k">import</span> <span class="n">ValidationError</span>
+
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../refifer.html#refifer.events.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents an event that will be sent to the notification service.</span>
+<span class="sd">    This class uses validators to validate the payload of its instances.</span>
+
+<span class="sd">    Validators are callables which takes an event as</span>
+<span class="sd">    input and raises an exception if the payload could not</span>
+<span class="sd">    be validated by the callable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="p">{},</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transaction_ref</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">client_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span>
+
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">transaction_ref</span> <span class="k">if</span> <span class="n">transaction_ref</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transaction_ref</span> <span class="o">=</span> <span class="n">ref</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validators</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Event.add_payload_validator"><a class="viewcode-back" href="../../refifer.html#refifer.events.Event.add_payload_validator">[docs]</a>    <span class="k">def</span> <span class="nf">add_payload_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">validator</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">validator</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Event.clear_validators"><a class="viewcode-back" href="../../refifer.html#refifer.events.Event.clear_validators">[docs]</a>    <span class="k">def</span> <span class="nf">clear_validators</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validators</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+<div class="viewcode-block" id="Event.get_data"><a class="viewcode-back" href="../../refifer.html#refifer.events.Event.get_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;client_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span><span class="p">,</span>
+            <span class="s2">&quot;event_name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;transaction_reference&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transaction_ref</span><span class="p">),</span> 
+            <span class="s2">&quot;payload&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="Event.validate"><a class="viewcode-back" href="../../refifer.html#refifer.events.Event.validate">[docs]</a>    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">validator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validators</span><span class="p">:</span>
+                <span class="n">validator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="EventRegistration"><a class="viewcode-back" href="../../refifer.html#refifer.events.EventRegistration">[docs]</a><span class="k">class</span> <span class="nc">EventRegistration</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that represents the data used for registering events notification</span>
+<span class="sd">    on the service.</span>
+
+<span class="sd">    The registration payload can be set by users but the payload can also</span>
+<span class="sd">    be build by adding events to the registration object using the </span>
+<span class="sd">    exposed methods.</span>
+
+<span class="sd">    keyword Args:</span>
+<span class="sd">        registration_payload(dict): an optional keyword arguement that </span>
+<span class="sd">            contains the payload that will be posted to the server.</span>
+<span class="sd">        client_id(str): the id of the client the event is being registered</span>
+<span class="sd">            for</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">registration_payload</span><span class="o">=</span><span class="p">{},</span> <span class="n">client_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registration_payload</span> <span class="o">=</span> <span class="n">registration_payload</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client_id</span> <span class="o">=</span> <span class="n">client_id</span>
+
+<div class="viewcode-block" id="EventRegistration.set_registration_info"><a class="viewcode-back" href="../../refifer.html#refifer.events.EventRegistration.set_registration_info">[docs]</a>    <span class="k">def</span> <span class="nf">set_registration_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_name</span><span class="p">,</span> <span class="n">urls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">emails</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">sms_numbers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds an event to the list of events that are to be registered, </span>
+<span class="sd">        including the url, email, or sms number that are to recieve </span>
+<span class="sd">        notifications about the event for a given client.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            event_name(str): the code that uniquely identifies the event.</span>
+
+<span class="sd">        Keyword Args:</span>
+<span class="sd">            urls(list): (optional) a list of url for the endpoint that </span>
+<span class="sd">                will recieve the event.</span>
+<span class="sd">            emails(list): (optional) a list of email that will be sent a </span>
+<span class="sd">                notification hen the event is fired.</span>
+<span class="sd">            phone_numbers(list): (optional) a list of phone number that will be sent </span>
+<span class="sd">                a notification when the event is fired.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registration_payload</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registration_payload</span><span class="p">[</span><span class="s2">&quot;event_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registration_payload</span><span class="p">[</span><span class="s2">&quot;callback_urls&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">urls</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registration_payload</span><span class="p">[</span><span class="s2">&quot;emails&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">emails</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_registration_payload</span><span class="p">[</span><span class="s2">&quot;sms&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sms_numbers</span></div>
+
+<div class="viewcode-block" id="EventRegistration.event_registration_data"><a class="viewcode-back" href="../../refifer.html#refifer.events.EventRegistration.event_registration_data">[docs]</a>    <span class="k">def</span> <span class="nf">event_registration_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepares the data that will be posted to the notification</span>
+<span class="sd">        service given the event codes that have been added to the</span>
+<span class="sd">        instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registration_payload</span></div></div>
+
+<div class="viewcode-block" id="picked_event_validator"><a class="viewcode-back" href="../../refifer.html#refifer.events.picked_event_validator">[docs]</a><span class="k">def</span> <span class="nf">picked_event_validator</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    validator used for validating the fields of a `picked` event</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        event(Event): the event that is to be validated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">payload</span>
+    <span class="k">if</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;status_code&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;PCK&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s2">&quot;Status code for payload should be PCK.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">payload</span><span class="p">[</span><span class="s2">&quot;status_name&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;Picked&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s2">&quot;Status name is incorrect&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Timothy Ebiuwhe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
