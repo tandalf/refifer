@@ -61,7 +61,7 @@ class EventRegistration(object):
     keyword Args:
         registration_payload(dict): an optional keyword arguement that 
             contains the payload that will be posted to the server.
-        client_id(str): the id of the client the event is being registered
+        client_id(int): the id of the client the event is being registered
             for
     """
 

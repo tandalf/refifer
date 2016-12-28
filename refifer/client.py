@@ -10,7 +10,7 @@ import requests
 from requests.exceptions import HTTPError
 
 from .constants import RETRY_COUNT, REGISTRATION_ENDPOINT, FIRE_ENDPOINT
-from .exceptions import RefiferError
+from .exceptions import RefiferError, InvalidClientIDError
 from .events import Event, EventRegistration
 
 class Refifer(object):
@@ -39,13 +39,18 @@ class Refifer(object):
         self.retry_count = retry_count
         self.session = requests.Session()
 
-    def _prepare_headers(self, client_id, content_type="application/json", 
+    def _prepare_headers(self, client_id=None, content_type="application/json", 
         *args, **kwargs):
         headers =  {"Content-Type": content_type, 
-            "X-Client-ID": client_id,
+            "X-Client-ID": str(client_id) if client_id else "",
             "Authorization": "Bearer " + str(self.access_token)}
         headers.update(kwargs)
         return headers
+
+    def _parse_client_id(self, client_id):
+        if client_id == None:\
+            raise InvalidClientIDError("The client ID cannot be of NoneType")
+        return int(client_id)
 
     def _make_registration(self, event_name, event_codes):
         """
@@ -80,7 +85,7 @@ class Refifer(object):
 
             method(str): http method that will be used for the request
 
-            client_id(str): the client_id for the client making the request
+            client_id(int): the client_id for the client making the request
         
         Returns:
             requests.Response: a Response object that was the result of the 
@@ -90,7 +95,11 @@ class Refifer(object):
             method = "POST"
 
         try:
-            headers = self._prepare_headers(client_id)
+            if client_id:
+                headers = self._prepare_headers(client_id)
+                client_id = self._parse_client_id(client_id)
+            else:
+                headers = self._prepare_headers("")
             return self.session.request(method, endpoint, params=args, 
                 data=post_args, timeout=self.timeout, proxies=self.proxies,
                 headers=headers)
@@ -107,7 +116,7 @@ class Refifer(object):
         Args:
             event_name(str): the name of the event whose registration 
                 details is to be gotten from the server.
-            client_id(str): the client_id of the client
+            client_id(int): the client_id of the client
 
         Returns:
             dict: the registration data that was used in registering the 
@@ -116,6 +125,7 @@ class Refifer(object):
         Note:
             this method is NOT currently supported at the service.
         """
+        client_id = self._parse_client_id(client_id)
         endpoint = REGISTRATION_ENDPOINT + "/" + client_id
         reg_response = self.request(endpoint, method="GET", client_id=client_id).content
         reg_response = json.loads(reg_response)
@@ -157,12 +167,14 @@ class Refifer(object):
             registration_payload(dict): a json serializable dict containing
                 the raw payload that will be submitted to the regostration
                 endpoint
-            client_id(str): the client_id of the client
+            client_id(int): the client_id of the client
 
         Returns:
             requests.Response: the Response object which is the result of 
             registering an event.
         """
+        client_id = self._parse_client_id(client_id)
+
         event_registraton = EventRegistration(registration_payload, client_id)
         return self.register_event(client_id, event_registration)
 
@@ -206,12 +218,14 @@ class Refifer(object):
 
         Keyword Args:
             payload(dict): the payload for the events being fired
-            client_id(str): the client_id of the client
+            client_id(int): the client_id of the client
             transaction_ref(str): the transaction reference for the event
 
         Returns:
             requests.Response: response gotten from firing event
         """
+        client_id = self._parse_client_id(client_id)
+
         ref = transaction_ref if transaction_ref else str(uuid.uuid4())
         event = Event(event_name, payload=payload, client_id=client_id, 
             transaction_ref=ref)
@@ -223,10 +237,11 @@ class Refifer(object):
         Unsubscribes the client from events notifications.
 
         Args:
-            client_id(str): the client_id of the client
+            client_id(int): the client_id of the client
 
         Returns:
             requests.Response: response gotten from unsubscribing
         """
+        client_id = self._parse_client_id(client_id)
         return self.request(REGISTRATION_ENDPOINT + "/" + str(client_id), 
             client_id=client_id, method="DELETE")

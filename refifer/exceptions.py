@@ -37,8 +37,8 @@ class ClientNotRegisteredError(RefiferError):
 	"""
 	pass
 
-class ValueError(RefiferError):
+class InvalidClientIDError(RefiferError):
     """
-    Raised in place of the default ValueError.
+    Raised when the client id is invalid.
     """
     pass

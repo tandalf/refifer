@@ -10,7 +10,7 @@ from refifer.client import Refifer
 class TestClient(TestCase):
 
     def setUp(self):
-        self.client_id = "Fetchr"
+        self.client_id = 78
         self.access_token = os.environ.get("FETCHR_TOKEN", None)
         if self.access_token == None:
             print("Access token not set. Please set the FETCHR_TOKEN" + \
@@ -18,7 +18,7 @@ class TestClient(TestCase):
         self.ref_client = Refifer(self.access_token)
 
     def test_register_event(self):
-        event_name = "ordered_delivered"
+        event_name = "ordered_picked"
         urls = ["https://www.meanstack.com/nonsense", 
             "https://www.this.that/note"]
 
@@ -57,7 +57,7 @@ class TestClient(TestCase):
     """
 
     def get_basic_event(self, client_id):
-        event_name = "ordered_delivered"
+        event_name = "ordered_picked"
 
         payload = {
             "date":"2016-12-23 10:20", 
